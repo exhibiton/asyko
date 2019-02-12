@@ -1,0 +1,16 @@
+.DS_STORE
+*.log
+node_modules
+dist
+dist/
+coverage
+cypress/screenshots
+cypress/videos
+.idea/
+settings.json
+*.ep
+.history
+.DS_Store
+.ssl/
+.next/
+static/sitemap.xml
