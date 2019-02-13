@@ -1,0 +1,49 @@
+# CircleCI 2.0 config.
+
+defaults: &defaults
+  shell: /bin/bash --login
+  working_directory: ~/repo
+  docker:
+    - image: circleci/node:lts-browsers 
+      environment: # environment variables for primary container
+        PGHOST: 127.0.0.1
+        PGUSER: postgres
+    - image: circleci/postgres:9.5-alpine # database image
+      environment: # environment variables for database
+        LC_ALL: en_US.UTF-8
+        LANG: en_US.UTF-8
+        POSTGRES_USER: postgres
+        POSTGRES_DB: test
+        POSTGRES_PASSWORD: ""
+
+version: 2
+jobs:
+  build-frontend:
+    environment:
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+      TZ: '/usr/share/zoneinfo/America/New_York'
+    docker:
+      # specify the version you desire here
+      - image: circleci/node:lts-browsers
+    working_directory: ~/repo
+    steps:
+      - checkout
+      # Download and cache dependencies
+      - restore_cache:
+          key: yarn-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+          # fallback to using the latest cache if no exact match is found
+      - run: yarn install
+      - save_cache:
+          paths:
+            - node_modules
+          key: yarn-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+
+workflows:
+  version: 2
+  deploy-k8s:
+    jobs:
+      - build-frontend:
+          filters:
+            branches:
+              only: master
