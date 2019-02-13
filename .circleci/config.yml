@@ -98,8 +98,8 @@ jobs:
           name: Authenticate with K8s container registry
           command: gcloud auth configure-docker
       - run:
-          name: Get SHA # will be useful in debugging deployment issues
-          command: echo "SHA $CIRCLE_SHA1"
+          name: Apply project settings to deploy.yaml
+          command: sed -i "s/APPLICATION_NAME/${APPLICATION_NAME}/g" kubernetes/deploy.yaml && sed -i "s/GKE_PROJECT_NAME/${GKE_PROJECT_NAME}/g" kubernetes/deploy.yaml
       - run:
           name: Apply latest kube yaml changes
           command: kubectl apply -f kubernetes/deploy.yaml
