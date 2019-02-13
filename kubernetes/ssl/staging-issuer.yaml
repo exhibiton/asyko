@@ -1,0 +1,18 @@
+    apiVersion: certmanager.k8s.io/v1alpha1
+    kind: Issuer
+    metadata:
+      name: letsencrypt-staging
+    spec:
+      acme:
+        email: $ADMIN_EMAIL
+        server: https://acme-staging-v02.api.letsencrypt.org/directory
+        privateKeySecretRef:
+          name: letsencrypt-staging
+        dns01:
+          providers:
+          - name: clouddns
+            clouddns:
+              project: $
+              serviceAccountSecretRef:
+                name: $DNS_CREDENTIALS_SECRET_NAME
+                key: credentials.json

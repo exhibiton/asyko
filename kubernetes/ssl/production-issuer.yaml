@@ -1,0 +1,18 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: $ADMIN_EMAIL
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    dns01:
+      providers:
+      - name: clouddns
+        clouddns:
+          project: $GKE_PROJECT_NAME
+          serviceAccountSecretRef:
+            name: $DNS_CREDENTIALS_SECRET_NAME
+            key: credentials.json
