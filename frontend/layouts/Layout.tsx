@@ -17,7 +17,7 @@ const Layout: React.FunctionComponent<Props> = ({ children, title = 'Asyko - End
     <header>
       <nav>
         <div className="mlxl mts">
-          <img src={require('../assets/images/asyko logo.svg')} />
+          <img src={require('../assets/images/asykologo.svg')} />
         </div>
       </nav>
     </header>
