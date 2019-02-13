@@ -26,10 +26,10 @@ jobs:
     docker:
       # specify the version you desire here
       - image: circleci/node:lts-browsers
-    working_directory: ~/repo/frontend
+    working_directory: ~/repo
     steps:
       - checkout
-      - run: yarn install
+      - run: cd frontend && yarn install
       - save_cache:
           paths:
             - node_modules
