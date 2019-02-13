@@ -33,7 +33,7 @@ jobs:
       - save_cache:
           paths:
             - node_modules
-          key: yarn-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+          key: cd frontend && yarn-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
 
 workflows:
   version: 2
