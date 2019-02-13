@@ -78,7 +78,6 @@ jobs:
       DEBIAN_FRONTEND: noninteractive
     steps:
       - checkout
-      - setup_remote_docker
       - run:
           name: Authenticate with Google Cloud APIs
           command: echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
@@ -105,7 +104,7 @@ jobs:
           command: kubectl apply -f kubernetes/deploy.yaml
       - run:
           name: Check Rollout status
-          command: kubectl rollout status deployments user-webapp --request-timeout="180"
+          command: kubectl rollout status deployments $APPLICATION_NAME --request-timeout="180"
 
 workflows:
   version: 2
