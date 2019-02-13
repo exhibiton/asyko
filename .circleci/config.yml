@@ -29,10 +29,6 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
-      # Download and cache dependencies
-      - restore_cache:
-          key: yarn-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
-          # fallback to using the latest cache if no exact match is found
       - run: yarn install
       - save_cache:
           paths:
