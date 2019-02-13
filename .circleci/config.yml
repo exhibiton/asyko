@@ -30,16 +30,107 @@ jobs:
     steps:
       - checkout
       - run: cd frontend && yarn install
-      - save_cache:
-          paths:
-            - node_modules
-          key: cd frontend && yarn-cache-{{ .Branch }}-{{ checksum "yarn.lock" }}
+  push-image-gcr:
+    <<: *defaults
+    docker:
+      - image: google/cloud-sdk
+    environment:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Get Google service key
+          command: echo $GCLOUD_SERVICE_KEY | base64 --decode --ignore-garbage > ${HOME}/gcloud-service-key.json
+      - run:
+          name: Authenticate with Google Cloud APIs
+          command: gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+      - run:
+          name: Set default Project
+          command: gcloud --quiet config set project $GKE_PROJECT_NAME
+      - run:
+          name: Set default Zone
+          command: gcloud --quiet config set compute/zone $ZONE
+      - run:
+          name: Get K8s cluster logins
+          command: gcloud --quiet container clusters get-credentials $GKE_CLUSTER_NAME
+      - run:
+          name: Authenticate with K8s container registry
+          command: gcloud auth configure-docker
+      - run:
+          name: Login to container registry
+          command: gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://gcr.io
+      - run:
+          name: Change directory
+          command: cd frontend
+      - run:
+          name: Build API container image
+          command: docker build -t gcr.io/$GKE_PROJECT_NAME/$APPLICATION_NAME:latest -f frontend/Dockerfile frontend/
+      - run:
+          name: Push API image
+          command: docker push gcr.io/$GKE_PROJECT_NAME/$APPLICATION_NAME:latest
+      - run:
+          name: Get SHA # will be useful in debugging deployment issues
+          command: echo "SHA $CIRCLE_SHA1"
+
+  deploy-frontend:
+    <<: *defaults
+    docker:
+      - image: google/cloud-sdk
+    environment:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Get Google service key
+          command: echo $GCLOUD_SERVICE_KEY | base64 --decode --ignore-garbage > ${HOME}/gcloud-service-key.json
+      - run:
+          name: Authenticate with Google Cloud APIs
+          command: gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+      - run:
+          name: Set default Project
+          command: gcloud --quiet config set project $GKE_PROJECT_NAME
+      - run:
+          name: Set default Zone
+          command: gcloud --quiet config set compute/zone $ZONE
+      - run:
+          name: Get K8s cluster logins
+          command: gcloud --quiet container clusters get-credentials $GKE_CLUSTER_NAME
+      - run:
+          name: Set default cluster
+          command: gcloud --quiet config set container/cluster $GKE_CLUSTER_NAME
+      - run:
+          name: Authenticate with K8s container registry
+          command: gcloud auth configure-docker
+      - run:
+          name: Get SHA # will be useful in debugging deployment issues
+          command: echo "SHA $CIRCLE_SHA1"
+      - run:
+          name: Apply latest kube yaml changes
+          command: kubectl apply -f kubernetes/deploy.yaml
+      - run:
+          name: Check Rollout status
+          command: kubectl rollout status deployments user-webapp --request-timeout="180"
 
 workflows:
   version: 2
   deploy-k8s:
     jobs:
       - build-frontend:
+          filters:
+            branches:
+              only: master
+      - push-image-gcr:
+          requires:
+           - build-frontend
+          filters:
+            branches:
+              only: master
+      - deploy-frontend:
+          requires:
+            - build-frontend
+            - push-image-gcr
           filters:
             branches:
               only: master
